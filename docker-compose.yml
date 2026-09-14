@@ -1,0 +1,33 @@
+# EchoMind 基础设施：PostgreSQL(pgvector) + Redis
+# 启动: docker compose up -d
+# 查看: docker compose ps / docker compose logs -f db
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: echomind
+      POSTGRES_PASSWORD: echomind
+      POSTGRES_DB: echomind
+    ports:
+      - "5432:5432"
+    volumes:
+      # 命名卷持久化数据，容器重建不丢库
+      - echomind_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U echomind -d echomind"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  echomind_pgdata:

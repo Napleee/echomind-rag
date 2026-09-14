@@ -1,0 +1,56 @@
+# EchoMind 检索质量评估问题集
+# 语料来源: samples/ 目录（EchoMind设计笔记.md + 产品评审会-转写.json）
+# 命中判定: 期望关键词中「任意一个」出现在参与判定的检索块文本中，该题即算命中
+# 运行方式: 在 backend/ 目录执行 python -m eval.run_eval [--k 5] [--limit N]
+questions:
+  - question: EchoMind 的中文名是什么？
+    expected_keywords:
+      - "回声"
+
+  - question: 默认的切块大小是多少字符？
+    expected_keywords:
+      - "500 字符"
+      - "500字符"
+      - "500"
+
+  - question: 相邻块的重叠是多少字符？
+    expected_keywords:
+      - "重叠 50"
+      - "重叠50"
+
+  - question: 项目使用的向量模型是哪一个？
+    expected_keywords:
+      - "bge-small-zh-v1.5"
+      - "bge-small-zh"
+
+  - question: 向量模型输出的维度是多少？
+    expected_keywords:
+      - "512 维"
+      - "512维"
+      - "512"
+
+  - question: 未配置 LLM API Key 时系统会进入什么模式？
+    expected_keywords:
+      - "mock"
+
+  - question: V2 正式上线时间定在哪一天？
+    expected_keywords:
+      - "10 月 15"
+      - "10月15"
+
+  - question: V2 的功能冻结日期是哪一天？
+    expected_keywords:
+      - "9 月 30"
+      - "9月30"
+
+  - question: V2 项目的预算是多少？
+    expected_keywords:
+      - "80 万"
+      - "80万"
+
+  - question: 知识库权限体系支持哪几种角色？
+    expected_keywords:
+      - "所有者"
+      - "管理员"
+      - "成员"
+      - "访客"

@@ -1,0 +1,12 @@
+# 不送进 Docker 构建上下文的文件（加速构建、避免敏感信息进镜像）
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.env
+.env.*
+data/
+tests/
+eval/
+*.egg-info/
+.DS_Store
