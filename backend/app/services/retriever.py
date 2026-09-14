@@ -221,5 +221,7 @@ def search(
         # 延迟导入，避免与 reranker 模块循环依赖
         from app.services.reranker import rerank
 
-        return rerank(question, fused, k)
+        # 只精排融合后前 rerank_candidates 名: 重排是为了精确切 top-k，
+        # 对 40 个候选全量精排只增加 CPU 延迟，不改善最终 top-k 质量
+        return rerank(question, fused[: settings.rerank_candidates], k)
     return fused[:k]

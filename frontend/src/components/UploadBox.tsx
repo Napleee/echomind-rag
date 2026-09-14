@@ -74,17 +74,17 @@ export default function UploadBox({ onUploaded }: UploadBoxProps) {
         onDrop={onDrop}
         className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
           dragging
-            ? 'border-indigo-400 bg-indigo-50'
-            : 'border-slate-300 bg-white hover:border-indigo-300 hover:bg-slate-50'
+            ? 'border-sakura bg-blush'
+            : 'border-hairline bg-card hover:border-sakura/60 hover:bg-panel'
         }`}
       >
-        <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+        <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blush text-sakura">
           {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
         </span>
-        <p className="text-sm font-medium text-slate-600">
+        <p className="text-sm font-medium text-ink-soft">
           {uploading ? '正在上传…' : '拖拽文件到此处，或点击选择文件'}
         </p>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-ink-faint">
           支持 PDF / Word / Markdown / TXT / JSON，单个文件不超过 20MB
         </p>
         <input
@@ -100,14 +100,14 @@ export default function UploadBox({ onUploaded }: UploadBoxProps) {
       {notice && (notice.ok > 0 || notice.fail.length > 0) && (
         <div className="mt-3 space-y-1.5 text-sm">
           {notice.ok > 0 && (
-            <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700">
+            <p className="rounded-lg border border-success-bg bg-success-bg px-3 py-2 text-success-fg">
               成功上传 {notice.ok} 个文档，正在后台解析入库。
             </p>
           )}
           {notice.fail.map((msg, i) => (
             <p
               key={i}
-              className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-600"
+              className="rounded-lg border border-bad-bg bg-bad-bg px-3 py-2 text-bad-fg"
             >
               {msg}
             </p>

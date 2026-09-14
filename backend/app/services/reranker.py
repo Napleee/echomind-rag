@@ -34,13 +34,16 @@ def _get_cross_encoder() -> Any:
         return _cross_encoder
 
 
-def rerank(query: str, chunks: list[RetrievedChunk], top_k: int) -> list[RetrievedChunk]:
+def rerank(
+    query: str, chunks: list[RetrievedChunk], top_k: int, *, force: bool = False
+) -> list[RetrievedChunk]:
     """对候选块重排，返回前 top_k 条（score 覆盖为 rerank 得分）。
 
-    settings.enable_rerank 为 False 时跳过模型，直接截断。
+    settings.enable_rerank 为 False 时跳过模型，直接截断（force=True 可无视开关，
+    供评估实验显式对比 rerank 开/关效果）。
     """
     settings = get_settings()
-    if not settings.enable_rerank or not chunks:
+    if (not settings.enable_rerank and not force) or not chunks:
         return list(chunks[:top_k])
     model = _get_cross_encoder()
     pairs = [(query, c.content) for c in chunks]

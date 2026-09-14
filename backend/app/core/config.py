@@ -27,10 +27,15 @@ class Settings(BaseSettings):
     rrf_k: int = 60             # RRF 融合常数
     enable_rerank: bool = False # 阶段3开启
     rerank_model: str = "BAAI/bge-reranker-base"
+    rerank_candidates: int = 10  # 进入重排的候选条数（精排只做最终精选，条数越多 CPU 延迟越高）
 
     # ---- 基础设施 ----
     database_url: str = "postgresql+psycopg://echomind:echomind@localhost:5432/echomind"
     redis_url: str = "redis://localhost:6379/0"
+
+    # ---- 缓存与限流（Redis 不可用时自动降级直通）----
+    cache_ttl_seconds: int = 1800  # 检索结果 / 完整回答缓存的 TTL
+    rate_limit_per_min: int = 10   # 提问接口按 IP 每分钟限流次数（<=0 关闭）
 
     # ---- 应用 ----
     upload_dir: str = "data/uploads"

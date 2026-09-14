@@ -1,4 +1,10 @@
-"""对话问答 API: SSE 流式返回（sources → token… → done / error）。"""
+"""对话问答 API: SSE 流式返回（sources → token… → done / error）。
+
+链路（含阶段5缓存优化）:
+    1. 完整回答缓存命中 → 直接回放（含 cached 标记），跳过检索与生成
+    2. 检索结果缓存命中 → 跳过向量化/检索/重排，直接进大模型
+    3. 均未命中 → 完整链路: embedding → 混合检索(可选重排) → 流式生成，并写两层缓存
+"""
 from __future__ import annotations
 
 import json
@@ -6,7 +12,7 @@ import logging
 import time
 from typing import Iterator, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -14,12 +20,14 @@ from sqlalchemy.orm import Session
 from app.core.db import SessionLocal, get_db
 from app.models import Conversation, Message
 from app.schemas import ChatRequest, ConversationOut, MessageOut, SourceOut
-from app.services import retriever
+from app.services import cache, retriever
 from app.services.embedder import get_embedder
 from app.services.llm import stream_answer
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["chat"])
+
+_ANSWER_REPLAY_SLICE = 100  # 回放缓存回答时每条 token 事件的字符数
 
 
 def _sse(event: str, data: dict) -> str:
@@ -59,30 +67,56 @@ def _generate(conversation_id: int, question: str, top_k: Optional[int]) -> Iter
         finally:
             db.close()
 
+    # ---- 第一层: 完整回答缓存命中 → 回放，跳过检索与生成 ----
+    cached_answer = cache.get_cached_answer(question)
+    if cached_answer:
+        retrieval = cache.get_cached_retrieval(question)
+        if retrieval:
+            sources_payload = retrieval["sources"]
+        if sources_payload:
+            yield _sse("sources", {"sources": sources_payload})
+        full_text = cached_answer
+        for i in range(0, len(full_text), _ANSWER_REPLAY_SLICE):
+            yield _sse("token", {"delta": full_text[i : i + _ANSWER_REPLAY_SLICE]})
+        yield _sse(
+            "done",
+            {"conversation_id": conversation_id, "latency_ms": _latency_ms(), "cached": True},
+        )
+        _persist()
+        return
+
     try:
-        # 1) 问题转向量（embedding 由调用方完成，retriever 不碰 embedder）
-        query_embedding = get_embedder().embed_query(question)
-        # 2) 向量 + BM25 + RRF（可选 rerank）；top_k 作为最终条数透传，缺省用 final_top_k
-        chunks = retriever.search(question, query_embedding, final_k=top_k)
+        context_blocks: list[str]
+        retrieval = cache.get_cached_retrieval(question)
+        if retrieval:
+            # ---- 第二层: 检索结果缓存命中 → 跳过 embedding/检索/重排 ----
+            sources_payload = retrieval["sources"]
+            context_blocks = retrieval["context_blocks"]
+        else:
+            # 1) 问题转向量（embedding 由调用方完成，retriever 不碰 embedder）
+            query_embedding = get_embedder().embed_query(question)
+            # 2) 向量 + BM25 + RRF（可选 rerank）；top_k 作为最终条数透传，缺省用 final_top_k
+            chunks = retriever.search(question, query_embedding, final_k=top_k)
+            sources_payload = [
+                SourceOut(
+                    chunk_id=c.chunk_id,
+                    document_id=c.document_id,
+                    document_title=c.document_title,
+                    seq=c.seq,
+                    score=round(c.score, 4),
+                    snippet=c.content[:150],
+                ).model_dump()
+                for c in chunks
+            ]
+            context_blocks = [
+                f"资料{i}（来自 {c.document_title} 第{c.seq + 1}段）: {c.content}"
+                for i, c in enumerate(chunks, start=1)
+            ]
+            cache.cache_retrieval(question, sources_payload, context_blocks)
+
         # 3) 先发 sources 溯源事件
-        sources_payload = [
-            SourceOut(
-                chunk_id=c.chunk_id,
-                document_id=c.document_id,
-                document_title=c.document_title,
-                seq=c.seq,
-                score=round(c.score, 4),
-                snippet=c.content[:150],
-            ).model_dump()
-            for c in chunks
-        ]
         yield _sse("sources", {"sources": sources_payload})
-        # 4) 组装带编号的资料块
-        context_blocks = [
-            f"资料{i}（来自 {c.document_title} 第{c.seq + 1}段）: {c.content}"
-            for i, c in enumerate(chunks, start=1)
-        ]
-        # 5) 流式生成回答
+        # 4) 流式生成回答
         for delta in stream_answer(question, context_blocks):
             full_text += delta
             yield _sse("token", {"delta": delta})
@@ -96,13 +130,30 @@ def _generate(conversation_id: int, question: str, top_k: Optional[int]) -> Iter
         _persist()  # 保留部分产出（无正文时 _persist 内部会跳过）
         return  # error 是异常路径的终结事件，不再发送 done
 
+    # 成功完成: 写完整回答缓存，发 done
+    if full_text:
+        cache.cache_answer(question, full_text)
     yield _sse("done", {"conversation_id": conversation_id, "latency_ms": _latency_ms()})
     _persist()
 
 
 @router.post("/chat")
-def chat(req: ChatRequest, db: Session = Depends(get_db)) -> StreamingResponse:
-    """提问: 创建/复用会话并落库 user 消息，再以 SSE 流式返回回答。"""
+def chat(
+    req: ChatRequest, request: Request, db: Session = Depends(get_db)
+) -> StreamingResponse:
+    """提问: 创建/复用会话并落库 user 消息，再以 SSE 流式返回回答。
+
+    按 IP 固定窗口限流（Redis 降级时直通）。
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    allowed, retry_after = cache.rate_limit(client_ip)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"提问太频繁，请约 {retry_after} 秒后再试。",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     # 会话不存在则创建，标题取问题前 50 字
     if req.conversation_id is not None:
         conversation = db.get(Conversation, req.conversation_id)

@@ -1,0 +1,5 @@
+# 不送进构建上下文的文件（加速构建、减小上下文体积）
+node_modules/
+dist/
+.vite/
+.DS_Store

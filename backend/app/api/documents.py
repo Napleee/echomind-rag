@@ -19,6 +19,7 @@ from app.core.config import get_settings
 from app.core.db import get_db
 from app.models import Chunk, Document
 from app.schemas import DocumentOut, DocumentStatusOut
+from app.services import cache
 from app.services.ingestion import run_ingestion
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,7 @@ async def upload_document(
     db.refresh(doc)  # 取回服务端生成的 id / created_at
 
     background_tasks.add_task(run_ingestion, doc.id, str(path), source_type)
+    cache.invalidate_cache()  # 知识库变更，旧缓存失效
     return DocumentOut.model_validate(doc, from_attributes=True)
 
 
@@ -125,6 +127,7 @@ def reindex_document(
     db.refresh(doc)
 
     background_tasks.add_task(run_ingestion, doc.id, doc.file_path, doc.source_type)
+    cache.invalidate_cache()  # 知识库变更，旧缓存失效
     return DocumentOut.model_validate(doc, from_attributes=True)
 
 
@@ -136,3 +139,4 @@ def delete_document(document_id: int, db: Session = Depends(get_db)) -> None:
         raise HTTPException(status_code=404, detail="文档不存在")
     db.delete(doc)
     db.commit()
+    cache.invalidate_cache()  # 知识库变更，旧缓存失效

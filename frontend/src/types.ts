@@ -70,10 +70,11 @@ export interface TokenEvent {
   delta: string;
 }
 
-/** event: done */
+/** event: done（cached 为 true 表示回答来自 Redis 缓存回放） */
 export interface DoneEvent {
   conversation_id: number;
   latency_ms: number;
+  cached?: boolean;
 }
 
 /** event: error */

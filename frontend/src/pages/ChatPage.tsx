@@ -14,6 +14,7 @@ interface ChatMessage {
   content: string;
   sources?: Source[];
   errorText?: string;
+  cached?: boolean;
 }
 
 export default function ChatPage() {
@@ -60,7 +61,10 @@ export default function ChatPage() {
             setMessages((prev) =>
               prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + p.delta } : m)),
             ),
-          onDone: (p) => setConversationId(p.conversation_id),
+          onDone: (p) => {
+            setConversationId(p.conversation_id);
+            if (p.cached) patchAssistant(assistantId, { cached: true });
+          },
           onError: (p) => patchAssistant(assistantId, { errorText: p.message }),
         },
         controller.signal,
@@ -91,14 +95,14 @@ export default function ChatPage() {
       <div className="flex-1 space-y-6 overflow-y-auto py-6">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
+            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sakura text-white shadow-sm">
               <Sparkles className="h-7 w-7" />
             </span>
-            <h2 className="text-lg font-semibold text-slate-700">向你的知识库提问</h2>
-            <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-400">
+            <h2 className="text-lg font-semibold text-ink">向你的知识库提问</h2>
+            <p className="mt-2 max-w-sm text-sm leading-relaxed text-ink-faint">
               EchoMind 回声会先检索你上传的文档，再生成附带来源的回答。
               还没有资料？先到{' '}
-              <Link to="/documents" className="font-medium text-indigo-600 hover:underline">
+              <Link to="/documents" className="font-medium text-sakura hover:text-sakura-deep hover:underline">
                 知识库
               </Link>{' '}
               上传文档吧。
@@ -112,6 +116,7 @@ export default function ChatPage() {
               content={m.content}
               sources={m.sources}
               errorText={m.errorText}
+              cached={m.cached}
             />
           ))
         )}

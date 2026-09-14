@@ -1,6 +1,10 @@
-# EchoMind 基础设施：PostgreSQL(pgvector) + Redis
-# 启动: docker compose up -d
-# 查看: docker compose ps / docker compose logs -f db
+# EchoMind 编排：PostgreSQL(pgvector) + Redis + 后端 + 前端
+#
+# 常用命令:
+#   docker compose up -d                      # 开发模式: 只起 db + redis（后端跑在本机便于调试）
+#   docker compose --profile full up -d --build   # 全栈部署: 一条命令起完整服务
+#   docker compose --profile full ps          # 查看全栈状态
+#   docker compose --profile full down        # 停全栈（数据卷保留）
 services:
   db:
     image: pgvector/pgvector:pg16
@@ -29,5 +33,50 @@ services:
       timeout: 3s
       retries: 10
 
+  backend:
+    profiles: ["full"]        # 仅 --profile full 时启动，开发模式不占资源
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # 不发布宿主机端口: API 只经 nginx 反代对外（http://localhost:8080/api/...），
+    # 也避免与本机开发的 uvicorn(8000) 冲突
+    environment:
+      # 容器内走 compose 内网，数据库地址用服务名（优先级高于 env_file，覆盖 .env 里的 localhost）
+      DATABASE_URL: postgresql+psycopg://echomind:echomind@db:5432/echomind
+      REDIS_URL: redis://redis:6379/0
+      ENABLE_RERANK: "true"
+    env_file:
+      # 复用 backend/.env 里的 LLM_API_KEY 等配置；文件不存在也不报错（走 mock 模式）
+      - path: ./backend/.env
+        required: false
+    volumes:
+      # HF 模型缓存（bge embedding/reranker，一次下载永久复用，重建容器不重下）
+      - echomind_hfcache:/models
+      # 用户上传的文档
+      - echomind_uploads:/app/data/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    profiles: ["full"]
+    build:
+      context: ./frontend
+      args:
+        NPM_REGISTRY: https://registry.npmmirror.com
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"             # 入口: http://localhost:8080
+
 volumes:
   echomind_pgdata:
+  echomind_hfcache:
+  echomind_uploads:

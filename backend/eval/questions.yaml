@@ -1,8 +1,11 @@
-# EchoMind 检索质量评估问题集
-# 语料来源: samples/ 目录（EchoMind设计笔记.md + 产品评审会-转写.json）
+# EchoMind 检索质量评估问题集（v2，30 条）
+# 语料来源: samples/ 目录五份文档 + 用户上传的真实文档（干扰项）
+#   - EchoMind设计笔记.md / EchoMind-技术方案.md / 团队周报-9月第2周.md
+#   - 用户反馈汇总.txt / 产品评审会-转写.json / 技术评审会-缓存方案.json
 # 命中判定: 期望关键词中「任意一个」出现在参与判定的检索块文本中，该题即算命中
-# 运行方式: 在 backend/ 目录执行 python -m eval.run_eval [--k 5] [--limit N]
+# 运行方式: 在 backend/ 目录执行 python -m eval.run_eval [--k 5] [--limit N] [--strategy hybrid]
 questions:
+  # ---- 设计笔记（原有）----
   - question: EchoMind 的中文名是什么？
     expected_keywords:
       - "回声"
@@ -21,7 +24,6 @@ questions:
   - question: 项目使用的向量模型是哪一个？
     expected_keywords:
       - "bge-small-zh-v1.5"
-      - "bge-small-zh"
 
   - question: 向量模型输出的维度是多少？
     expected_keywords:
@@ -33,6 +35,7 @@ questions:
     expected_keywords:
       - "mock"
 
+  # ---- 产品评审会（原有）----
   - question: V2 正式上线时间定在哪一天？
     expected_keywords:
       - "10 月 15"
@@ -54,3 +57,131 @@ questions:
       - "管理员"
       - "成员"
       - "访客"
+
+  - question: V2 上线后灰度百分之多少的用户？
+    expected_keywords:
+      - "5%"
+      - "5 %"
+      - "灰度 5"
+      - "灰度5"
+
+  - question: 市场部哪一天开始宣传？
+    expected_keywords:
+      - "10 月 20"
+      - "10月20"
+
+  - question: 服务器扩容从几台扩到几台？
+    expected_keywords:
+      - "4 台"
+      - "8 台"
+      - "4台"
+      - "8台"
+
+  # ---- 技术方案 ----
+  - question: 为什么选择 pgvector 而不是独立向量数据库？
+    expected_keywords:
+      - "pgvector"
+      - "Milvus"
+      - "过度设计"
+
+  - question: 前端使用什么框架？
+    expected_keywords:
+      - "React"
+
+  - question: BM25 检索用什么分词？
+    expected_keywords:
+      - "jieba"
+
+  - question: 混合检索用什么方法融合两路结果？
+    expected_keywords:
+      - "RRF"
+      - "Reciprocal Rank Fusion"
+
+  - question: 重排模型用的是哪一个？
+    expected_keywords:
+      - "bge-reranker-base"
+
+  - question: 单次问答的大模型成本大约多少钱？
+    expected_keywords:
+      - "0.3 分"
+      - "0.3分"
+
+  - question: 向量检索用什么距离度量？
+    expected_keywords:
+      - "余弦"
+      - "cosine"
+
+  # ---- 团队周报 ----
+  - question: 张伟本周完成了什么工作？
+    expected_keywords:
+      - "RRF 融合"
+      - "HNSW"
+
+  - question: 十万级向量下 HNSW 的 P95 检索延迟是多少？
+    expected_keywords:
+      - "8ms"
+
+  - question: 本周累计文档和分段数量是多少？
+    expected_keywords:
+      - "312"
+
+  - question: 本周缓存命中率是多少？
+    expected_keywords:
+      - "25.2%"
+
+  - question: 平均首 token 延迟是多少？
+    expected_keywords:
+      - "1.8s"
+
+  - question: BM25 对哪类查询分词效果差？
+    expected_keywords:
+      - "纯数字"
+      - "512"
+
+  # ---- 用户反馈 ----
+  - question: 用户反馈里最大的亮点功能是什么？
+    expected_keywords:
+      - "来源溯源"
+      - "溯源"
+
+  - question: 用户对权限功能是什么态度？
+    expected_keywords:
+      - "权限"
+      - "V2"
+
+  - question: 速度优化排在第几位？
+    expected_keywords:
+      - "第一"
+      - "1"
+
+  # ---- 技术评审会（缓存方案）----
+  - question: 缓存的第一层缓存的是什么内容？
+    expected_keywords:
+      - "检索结果"
+
+  - question: 检索结果缓存的 TTL 是多长？
+    expected_keywords:
+      - "半小时"
+
+  - question: 缓存 key 用什么算法生成？
+    expected_keywords:
+      - "SHA-256"
+      - "SHA256"
+
+  - question: 限流方案用的是什么算法？
+    expected_keywords:
+      - "固定窗口"
+
+  - question: 提问接口的限流阈值是每分钟多少次？
+    expected_keywords:
+      - "10 次"
+      - "10次"
+
+  - question: 固定窗口算法有什么已知缺陷？
+    expected_keywords:
+      - "临界突发"
+      - "突发"
+
+  - question: 纯检索路径的压测目标 P95 是多少毫秒？
+    expected_keywords:
+      - "500"

@@ -88,8 +88,8 @@ export default function DocumentsPage() {
   return (
     <div className="space-y-5 py-6">
       <div>
-        <h1 className="text-lg font-semibold text-slate-800">知识库</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <h1 className="text-lg font-semibold text-ink">知识库</h1>
+        <p className="mt-1 text-sm text-ink-faint">
           上传文档，自动切块并向量化入库，随后即可在对话中检索。
         </p>
       </div>
@@ -97,27 +97,27 @@ export default function DocumentsPage() {
       <UploadBox onUploaded={() => void refresh()} />
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-bad-bg bg-bad-bg px-3 py-2 text-sm text-bad-fg">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-hairline bg-card">
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-400">
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-ink-faint">
             <Loader2 className="h-4 w-4 animate-spin" />
             加载中…
           </div>
         ) : docs.length === 0 ? (
-          <div className="py-16 text-center text-sm text-slate-400">
+          <div className="py-16 text-center text-sm text-ink-faint">
             还没有文档，先上传一份试试吧
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs text-slate-500">
+                <tr className="border-b border-hairline bg-panel text-left text-xs text-ink-soft">
                   <th className="px-4 py-2.5 font-medium">标题</th>
                   <th className="px-3 py-2.5 font-medium">类型</th>
                   <th className="px-3 py-2.5 font-medium">状态</th>
@@ -130,26 +130,26 @@ export default function DocumentsPage() {
                 {docs.map((doc) => (
                   <tr
                     key={doc.id}
-                    className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50/60"
+                    className="border-b border-hairline transition-colors last:border-0 hover:bg-panel/60"
                   >
                     <td
-                      className="max-w-[220px] truncate px-4 py-2.5 font-medium text-slate-700"
+                      className="max-w-[220px] truncate px-4 py-2.5 font-medium text-ink"
                       title={doc.title}
                     >
                       {doc.title}
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+                      <span className="rounded bg-blush px-1.5 py-0.5 text-xs text-rose-ink">
                         {typeLabel(doc.source_type)}
                       </span>
                     </td>
                     <td className="px-3 py-2.5">
                       <StatusBadge status={doc.status} error={doc.error} />
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">
+                    <td className="px-3 py-2.5 text-right tabular-nums text-ink-soft">
                       {doc.chunk_count}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-xs text-slate-500">
+                    <td className="whitespace-nowrap px-3 py-2.5 text-xs text-ink-faint">
                       {fmtTime(doc.created_at)}
                     </td>
                     <td className="px-3 py-2.5">
@@ -159,7 +159,7 @@ export default function DocumentsPage() {
                           onClick={() => void handleReindex(doc)}
                           disabled={busyId !== null}
                           title="删除旧分段并重新解析入库"
-                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-ink-faint transition-colors hover:bg-blush hover:text-rose-ink disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <RefreshCw
                             className={`h-3.5 w-3.5${busyId === doc.id ? ' animate-spin' : ''}`}
@@ -170,7 +170,7 @@ export default function DocumentsPage() {
                           type="button"
                           onClick={() => void handleDelete(doc)}
                           disabled={busyId !== null}
-                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-ink-faint transition-colors hover:bg-bad-bg hover:text-bad-fg disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           删除

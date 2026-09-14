@@ -8,12 +8,12 @@ interface StatusBadgeProps {
 
 const STYLE: Record<string, { label: string; cls: string }> = {
   processing: { label: '处理中', cls: 'border-amber-200 bg-amber-50 text-amber-600' },
-  ready: { label: '就绪', cls: 'border-green-200 bg-green-50 text-green-600' },
-  error: { label: '失败', cls: 'border-red-200 bg-red-50 text-red-600' },
+  ready: { label: '就绪', cls: 'border-success-bg bg-success-bg text-success-fg' },
+  error: { label: '失败', cls: 'border-bad-bg bg-bad-bg text-bad-fg' },
 };
 
 export default function StatusBadge({ status, error }: StatusBadgeProps) {
-  const conf = STYLE[status] ?? { label: status, cls: 'border-slate-200 bg-slate-50 text-slate-500' };
+  const conf = STYLE[status] ?? { label: status, cls: 'border-hairline bg-panel text-ink-faint' };
   return (
     <span
       title={status === 'error' && error ? error : undefined}

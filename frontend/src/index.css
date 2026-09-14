@@ -1,12 +1,23 @@
+@import 'lxgw-wenkai-webfont/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 细滚动条：长对话与表格滚动时更贴合整体风格 */
+/* 樱花主题 —— 移植自「音阅」：奶油纸面、樱粉挂件、圆点纸纹。
+   原则：正文区保持纯净可读，装饰只住在「框」上。 */
 @layer base {
+  body {
+    @apply bg-cream text-ink;
+    /* 正文区圆点纹（音阅同款） */
+    background-image: radial-gradient(#f8e7ed 1.1px, transparent 1.1px);
+    background-size: 22px 22px;
+  }
+
+  /* 细滚动条：粉灰 */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: #d9bfcb transparent;
   }
 
   ::-webkit-scrollbar {
@@ -16,7 +27,7 @@
 
   ::-webkit-scrollbar-thumb {
     border-radius: 9999px;
-    background-color: #cbd5e1;
+    background-color: #d9bfcb;
   }
 
   ::-webkit-scrollbar-track {

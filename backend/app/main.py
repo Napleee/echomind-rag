@@ -1,5 +1,6 @@
 """EchoMind 后端入口。"""
 import logging
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -17,12 +18,30 @@ logging.basicConfig(
 logger = logging.getLogger("echomind")
 
 
+def _warmup_models() -> None:
+    """后台预热本地模型（embedding / 可选 rerank），避免首个请求承受冷启动延迟。"""
+
+    def run() -> None:
+        from app.services.embedder import get_embedder
+
+        get_embedder()
+        logger.info("embedding 模型预热完成")
+        if get_settings().enable_rerank:
+            from app.services.reranker import _get_cross_encoder
+
+            _get_cross_encoder()
+            logger.info("rerank 模型预热完成")
+
+    threading.Thread(target=run, name="model-warmup", daemon=True).start()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
     init_db()
     logger.info("数据库初始化完成")
+    _warmup_models()
     yield
 
 
