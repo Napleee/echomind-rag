@@ -1,8 +1,6 @@
 // 底部输入区：textarea 自适应高度，Enter 发送 / Shift+Enter 换行；发送中变为「停止」按钮
-// 看板娘趴在输入条右上角：待命 / 回答中（倾听姿势 + 点头）两态
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Send, Square } from 'lucide-react';
-import Mascot from './Mascot';
 
 interface ComposerProps {
   sending: boolean;
@@ -44,9 +42,7 @@ export default function Composer({ sending, onSend, onStop }: ComposerProps) {
   };
 
   return (
-    <div className="relative border-t border-hairline bg-card p-3">
-      {/* 看板娘：探出输入条右上角，回答中点头 */}
-      <Mascot size={64} active={sending} className="pointer-events-none absolute -top-12 right-5 z-10 drop-shadow-sm" />
+    <div className="border-t border-hairline bg-card p-3">
       <div className="flex items-end gap-2 rounded-2xl border border-hairline bg-card p-2 shadow-sm transition-colors focus-within:border-sakura focus-within:ring-2 focus-within:ring-blush">
         <textarea
           ref={textareaRef}
