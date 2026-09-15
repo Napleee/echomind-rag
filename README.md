@@ -2,9 +2,13 @@
 
 > 让每一次发言都有回声。
 
-基于 RAG 的文档知识库问答系统：上传会议记录、设计文档，即可随时提问，得到**带出处引用**的流式回答。与作者的另一个项目 [音阅 yinyue-meeting](https://github.com/Napleee/yinyue-meeting)（会议录音转写）共用一套「樱花」视觉语言，是「会议转写 → 知识沉淀 → 随时追问」产品线的下游一环：音阅产出的会议转写 JSON，正是 EchoMind 最典型的语料。
+基于 RAG 的文档知识库问答系统：上传会议记录、设计文档，即可随时提问，得到**带出处引用**的流式回答。与作者的另一个项目 [音阅 yinyue-meeting](https://github.com/Napleee/yinyue-meeting)（会议录音转写）共用一套视觉语言——樱花 / 素笺 / 未来三主题可一键切换，看板娘、背景美图、垂落挂件一脉相承，是「会议转写 → 知识沉淀 → 随时追问」产品线的下游一环：音阅产出的会议转写 JSON，正是 EchoMind 最典型的语料。
 
 ![screenshot-chat](docs/screenshot-chat.png)
+
+| 樱花（默认） | 素笺 | 未来 |
+| --- | --- | --- |
+| ![theme-sakura](docs/theme-sakura.png) | ![theme-paper](docs/theme-paper.png) | ![theme-miku](docs/theme-miku.png) |
 
 ---
 
@@ -45,7 +49,7 @@ EchoMind 在此基础上做了三层递进：
 - 中文友好切块：500 字符 + 50 字符相邻重叠，边界不断语义（切块大小有实验依据，见下）
 - 本地向量化：bge-small-zh-v1.5（512 维，CPU 可跑，零 API 成本）
 - 混合检索：向量（pgvector HNSW）+ BM25（jieba 分词）双路召回，RRF 融合
-- 交叉重排：bge-reranker-base 精排融合后 Top10（为什么只排 10 个，见「面试考点」）
+- 交叉重排：bge-reranker-base 精排融合后 Top10（为什么只排 10 个，见「实验数据」）
 - 流式问答：SSE 逐 token 输出，回答附 chunk 级引用（文档名 + 原文片段 + 相似度得分）
 - 多轮会话：会话与消息落库，刷新页面不丢上下文
 - 两层缓存：检索结果缓存 + 完整回答缓存，命中时流式回放并标注「来自缓存」；命名空间版本号失效法，文档增删后立即生效
@@ -53,6 +57,7 @@ EchoMind 在此基础上做了三层递进：
 - Mock 模式：不配置任何 API Key 即可全链路演示（LLM 层回显检索结果）
 - 评估与实验：36 题测试集，四策略对比（recall@k / MRR）、chunk 大小扫描、压测脚本
 - 一键部署：`docker compose --profile full up -d --build` 拉起全栈（前端 Nginx + 后端 + pgvector + Redis）
+- 三主题界面：樱花 / 素笺 / 未来一键切换（与「音阅」同源），看板娘待命 / 回答中两态、背景美图、顶栏垂落挂件与飘落花瓣，主题选择本地持久化
 
 ## 实验数据
 
@@ -113,7 +118,7 @@ EchoMind 在此基础上做了三层递进：
 | 重排 | BAAI/bge-reranker-base | CrossEncoder 交叉编码比双塔向量更准的精排；只排 Top10 控制 CPU 延迟 |
 | LLM | DeepSeek（OpenAI 兼容协议） | 便宜且协议通用，改 `LLM_BASE_URL` 即可切智谱 GLM 等厂商 |
 | 缓存/限流 | Redis 7 | 两层缓存（检索 + 回答）与固定窗口限流；fail-open 降级 |
-| 前端 | React 18 + TS + Vite + Tailwind | SSE 打字机流式渲染、引用卡片；与「音阅」同源的樱花主题 |
+| 前端 | React 18 + TS + Vite + Tailwind | SSE 打字机流式渲染、引用卡片；与「音阅」同源的樱花/素笺/未来三主题 |
 | 部署 | Docker Compose + Nginx | 一条命令全栈拉起；Nginx 反代 /api 免 CORS、SSE 关缓冲 |
 | 测试 | pytest | 纯逻辑单测（切块、RRF）不触数据库、不下载模型，9/9 通过 |
 
@@ -211,19 +216,11 @@ python -m eval.load_test --scenario chat-cached --concurrency 20 --total 100
     └── src/                    # React 18 + TS：聊天流式渲染 / 文档管理 / 会话侧栏
 ```
 
-## 面试考点
-
-- **混合检索与 RRF 公式**：向量检索擅长语义泛化（"上线日期" ↔ "什么时候发布"），BM25 擅长精确词（"10 月 15"、"bge-small-zh-v1.5"），两路召回互补——本项目 36 题实测：vector 单独 88.89%，bm25 单独 97.22%，RRF 融合 100%。RRF 按`score(d) = Σ 1/(k + rank_i(d))`融合，**只看名次不看分数**，避免了两路分数量纲不可比、需要调权重的问题。
-- **为什么 rerank 只排 Top10**：CrossEncoder 对每个 (query, chunk) 对做完整前向，延迟随候选数线性涨。精排的职责是「把对的块从候选里挑出来排到最前」，融合后前 10 名已覆盖全部正确块（recall@10 = 100%），对 40 个候选全量精排只增加 CPU 延迟、不改善最终 Top5。实测只排 Top10 时 MRR 0.986。
-- **HNSW 与 IVF 对比**：HNSW 是多层跳表式近邻图，查询近似 O(logN)、召回高，代价是内存大、构建慢；IVF 先聚类再只搜最近的 nprobe 个簇，内存省、构建快，但召回受 nprobe 影响需要调参。本项目数据量在百万级以下，选 HNSW（`vector_cosine_ops`）一步到位；数据到亿级再考虑 IVF 或分层方案。
-- **两层缓存的设计**：检索结果缓存（省 embedding + 检索 + 重排）与完整回答缓存（连 LLM 调用都省，命中直接 SSE 回放并标记 `cached`）。失效用**命名空间版本号**（key 前缀带版本号，文档增删时 `INCR` 一键废弃全部旧缓存），比逐 key DEL 简单且无遗漏。Redis 不可用时 fail-open 降级直通——缓存挂了不能把主链路拖挂。
-- **固定窗口限流的缺陷**：窗口边界处可承受 2 倍突发（59s 和 61s 各打满 10 次）。已知权衡：要更平滑可上滑动窗口 / 令牌桶（Redis + Lua 原子操作），当前规模下固定窗口的实现成本与可解释性更优——面试时能讲清缺陷比「用了高级算法」更加分。
-- **chunk 策略**：块太大→语义稀释、Prompt 变长变贵；块太小→上下文断裂。本项目做了 5 档扫描实验（见上表），500 是 recall/成本/精度的平衡点——**用数据回答「为什么是 500」**。
-- **mock 模式的设计动机**：演示环境网络不可控（Key 失效、厂商限流），mock 让检索→融合→引用溯源的主链路完全不依赖外部服务即可验证；同时倒逼 LLM 层接口先定型（`stream_answer(question, context_blocks)`），换真模型只是换实现，不动架构。
-
 ## 与「音阅」的姐妹关系
 
-[音阅 yinyue-meeting](https://github.com/Napleee/yinyue-meeting) 把会议录音变成结构化转写，EchoMind 把转写沉淀为可追问的知识库——前者是「说」，后者是「回声」。两者共享同一套樱花视觉语言（奶油底色、樱粉主色、霞鹜文楷、圆点纸纹），放在一起是一站式「会议 → 知识」工作台的雏形。
+[音阅 yinyue-meeting](https://github.com/Napleee/yinyue-meeting) 把会议录音变成结构化转写，EchoMind 把转写沉淀为可追问的知识库——前者是「说」，后者是「回声」。两者共享同一套视觉语言：樱花 / 素笺 / 未来三主题、看板娘（待命 / 倾听两态）、右下角背景美图、顶栏垂落挂件、霞鹜文楷与圆点纸纹，放在一起是一站式「会议 → 知识」工作台的雏形。
+
+> 未来主题的看板娘为初音未来二创，遵循 [Piapro Character License](https://piapro.net/license/cl_cl.html)，仅作非商业个人项目使用。
 
 ## Roadmap
 

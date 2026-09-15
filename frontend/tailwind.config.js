@@ -1,5 +1,7 @@
 /** @type {import('tailwindcss').Config} */
-// 樱花主题色板移植自「音阅 yinyue-meeting」——同一产品线的姐妹项目，视觉一脉相承
+// 主题体系移植自「音阅 yinyue-meeting」——姐妹项目共享同一套视觉语言。
+// 色板不在配置里写死，而是引用 CSS 变量（index.css 中按 data-theme 切换），
+// 这样樱花/素笺/未来三套主题只换变量值，所有语义类名不动。
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
@@ -16,19 +18,19 @@ export default {
         ],
       },
       colors: {
-        // 奶油与樱粉（取自音阅 globals.css 语义变量）
-        cream: '#fff9f4', // 页面底：奶油白
-        panel: '#fdeef3', // 面板：樱花奶油
-        card: '#fffdfb', // 卡片：近白
-        ink: { DEFAULT: '#4a3f42', soft: '#7a6b70', faint: '#b3a4aa' }, // 暖墨三阶
-        hairline: '#f2dfe6', // 细边线
-        sakura: { DEFAULT: '#e8608a', deep: '#c94f78' }, // 主粉：强调 / 悬停
-        'rose-ink': '#9d3a5c', // 玫瑰墨：强调文字
-        blush: '#ffe9f1', // 浅粉底：选中 / 聚焦
-        sky: '#a8d8ef', // 天空蓝：第二点缀
-        mint: '#5c8a5e', // 就绪状态
-        success: { bg: '#e2f1e4', fg: '#5c8a5e' }, // 成功徽标
-        bad: { bg: '#f8d7d0', fg: '#c94f78' }, // 失败徽标
+        // 语义色 → 变量（:root 为樱花默认，[data-theme] 覆盖出素笺/未来）
+        cream: 'var(--c-cream)',
+        panel: 'var(--c-panel)',
+        card: 'var(--c-card)',
+        ink: { DEFAULT: 'var(--c-ink)', soft: 'var(--c-ink-soft)', faint: 'var(--c-ink-faint)' },
+        hairline: 'var(--c-hairline)',
+        sakura: { DEFAULT: 'var(--c-sakura)', deep: 'var(--c-sakura-deep)' },
+        'rose-ink': 'var(--c-rose-ink)',
+        blush: 'var(--c-blush)',
+        sky: 'var(--c-sky)',
+        mint: 'var(--c-mint)',
+        success: { bg: 'var(--c-chip-ok-bg)', fg: 'var(--c-chip-ok-fg)' },
+        bad: { bg: 'var(--c-chip-bad-bg)', fg: 'var(--c-chip-bad-fg)' },
       },
     },
   },

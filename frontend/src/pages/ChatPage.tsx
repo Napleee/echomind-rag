@@ -5,6 +5,7 @@ import { Sparkles } from 'lucide-react';
 import { streamChat } from '../api';
 import type { Source } from '../types';
 import Composer from '../components/Composer';
+import Mascot from '../components/Mascot';
 import MessageBubble from '../components/MessageBubble';
 
 /** 页面内的消息模型（服务端持久化的见 types.ts 的 Message） */
@@ -94,10 +95,18 @@ export default function ChatPage() {
       {/* 消息列表 */}
       <div className="flex-1 space-y-6 overflow-y-auto py-6">
         {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sakura text-white shadow-sm">
-              <Sparkles className="h-7 w-7" />
-            </span>
+          <div className="relative flex h-full flex-col items-center justify-center px-4 text-center">
+            {/* 看板娘：待命态（素笺主题自动降级为樱花图标） */}
+            <Mascot
+              size={128}
+              active={sending}
+              className="mb-2"
+              fallback={
+                <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sakura text-white shadow-sm">
+                  <Sparkles className="h-7 w-7" />
+                </span>
+              }
+            />
             <h2 className="text-lg font-semibold text-ink">向你的知识库提问</h2>
             <p className="mt-2 max-w-sm text-sm leading-relaxed text-ink-faint">
               EchoMind 回声会先检索你上传的文档，再生成附带来源的回答。

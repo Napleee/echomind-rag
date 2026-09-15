@@ -4,20 +4,97 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 樱花主题 —— 移植自「音阅」：奶油纸面、樱粉挂件、圆点纸纹。
+/* 主题体系移植自「音阅 yinyue-meeting」——三套主题共用一批语义变量，
+   <html data-theme="..."> 切换变量值，所有 Tailwind 语义类名不动。
    原则：正文区保持纯净可读，装饰只住在「框」上。 */
+
+/* ---- 樱花（默认）：奶油纸面、樱粉挂件、缓慢飘落的花瓣 ---- */
+:root {
+  --c-cream: #fff9f4;        /* 页面底：奶油白 */
+  --c-panel: #fdeef3;        /* 面板：樱花奶油 */
+  --c-card: #fffdfb;         /* 卡片：近白 */
+  --c-ink: #4a3f42;          /* 暖墨 */
+  --c-ink-soft: #7a6b70;     /* 淡暖墨（正文） */
+  --c-ink-faint: #b3a4aa;    /* 辅助信息 */
+  --c-hairline: #f2dfe6;     /* 细边线 */
+  --c-sakura: #e8608a;       /* 主粉：强调 */
+  --c-sakura-deep: #c94f78;  /* 深粉：悬停、按下 */
+  --c-rose-ink: #9d3a5c;     /* 玫瑰墨：强调文字 */
+  --c-blush: #ffe9f1;        /* 浅粉底：选中 / 聚焦 */
+  --c-sky: #a8d8ef;          /* 天空蓝：第二点缀 */
+  --c-mint: #5c8a5e;         /* 就绪状态 */
+  --c-chip-ok-bg: #e2f1e4;
+  --c-chip-ok-fg: #5c8a5e;
+  --c-chip-bad-bg: #f8d7d0;
+  --c-chip-bad-fg: #c94f78;
+  --dot-color: #f8e7ed;      /* 正文区圆点纹 */
+  --scroll-thumb: #d9bfcb;   /* 滚动条 */
+  --charm-soft: #f9c7d8;     /* 挂件主色 */
+  --charm-strong: #e8608a;
+}
+
+/* ---- 素笺：纸墨风，无背景图无看板娘，最安静的一档 ---- */
+[data-theme='paper'] {
+  --c-cream: #faf6ef;
+  --c-panel: #f3ede1;
+  --c-card: #fffdf8;
+  --c-ink: #1c1917;
+  --c-ink-soft: #57534e;
+  --c-ink-faint: #a8a099;
+  --c-hairline: #e5ddcc;
+  --c-sakura: #d43d2a;       /* 主强调 → 磁带红 */
+  --c-sakura-deep: #b53222;
+  --c-rose-ink: #1c1917;
+  --c-blush: #f6ead2;        /* 选中底 → 暖黄纸 */
+  --c-sky: #b45309;
+  --c-mint: #5a6b46;
+  --c-chip-ok-bg: #e8ecdd;
+  --c-chip-ok-fg: #5a6b46;
+  --c-chip-bad-bg: #f6ddd7;
+  --c-chip-bad-fg: #b53222;
+  --dot-color: transparent;  /* 素笺无圆点纹 */
+  --scroll-thumb: #cfc5b4;
+  --charm-soft: #f6ddd7;
+  --charm-strong: #d43d2a;
+}
+
+/* ---- 未来：冰蓝纸面 + Miku 青绿（初音未来二创，Piacro 角色许可，非商业） ---- */
+[data-theme='miku'] {
+  --c-cream: #f4fafb;
+  --c-panel: #e6f3f5;
+  --c-card: #fdffff;
+  --c-ink: #1a3238;
+  --c-ink-soft: #4a6570;
+  --c-ink-faint: #93aeb5;
+  --c-hairline: #d8e8ec;
+  --c-sakura: #2fb8ad;       /* 主强调 → 青绿 */
+  --c-sakura-deep: #1f9a90;
+  --c-rose-ink: #0e6b62;
+  --c-blush: #d9f1ee;
+  --c-sky: #39c5bb;
+  --c-mint: #3d7a68;
+  --c-chip-ok-bg: #dcf1e8;
+  --c-chip-ok-fg: #2e7d5b;
+  --c-chip-bad-bg: #fbdfe0;
+  --c-chip-bad-fg: #c94f5f;
+  --dot-color: #e4f1f3;
+  --scroll-thumb: #b8d8dc;
+  --charm-soft: #c9ece9;
+  --charm-strong: #2fb8ad;
+}
+
 @layer base {
   body {
     @apply bg-cream text-ink;
-    /* 正文区圆点纹（音阅同款） */
-    background-image: radial-gradient(#f8e7ed 1.1px, transparent 1.1px);
+    /* 正文区圆点纹（素笺主题下透明） */
+    background-image: radial-gradient(var(--dot-color) 1.1px, transparent 1.1px);
     background-size: 22px 22px;
   }
 
-  /* 细滚动条：粉灰 */
+  /* 细滚动条：随主题变色 */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #d9bfcb transparent;
+    scrollbar-color: var(--scroll-thumb) transparent;
   }
 
   ::-webkit-scrollbar {
@@ -27,10 +104,91 @@
 
   ::-webkit-scrollbar-thumb {
     border-radius: 9999px;
-    background-color: #d9bfcb;
+    background-color: var(--scroll-thumb);
   }
 
   ::-webkit-scrollbar-track {
     background-color: transparent;
+  }
+}
+
+/* ---- 主题切换过渡：变量变化时颜色平滑渐变 ---- */
+.theme-fade,
+.theme-fade * {
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease;
+}
+
+/* CSS 变量色板下 Tailwind 的 /透明度 修饰不可用，这两处用 color-mix 补 */
+.glass-card {
+  background-color: color-mix(in srgb, var(--c-card) 90%, transparent);
+}
+.hover-blush {
+  transition: background-color 0.15s ease;
+}
+.hover-blush:hover {
+  background-color: color-mix(in srgb, var(--c-blush) 60%, transparent);
+}
+
+/* ---- 挂件摇摆：绕挂绳顶端轻摆 ---- */
+@keyframes charm-sway {
+  0%,
+  100% {
+    transform: rotate(3.5deg);
+  }
+  50% {
+    transform: rotate(-3.5deg);
+  }
+}
+.charm {
+  transform-origin: top center;
+  animation: charm-sway 4s ease-in-out infinite;
+}
+
+/* ---- 花瓣飘落：下落 + 旋转 + 横向漂移（参数由内联样式变量控制） ---- */
+@keyframes petal-fall {
+  0% {
+    transform: translate3d(0, -6vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: var(--petal-opacity, 0.3);
+  }
+  92% {
+    opacity: var(--petal-opacity, 0.3);
+  }
+  100% {
+    transform: translate3d(var(--petal-drift, 5vw), 106vh, 0) rotate(320deg);
+    opacity: 0;
+  }
+}
+.petal {
+  position: absolute;
+  top: 0;
+  animation: petal-fall linear infinite;
+  pointer-events: none;
+}
+
+/* ---- 看板娘：回答中轻轻点头 ---- */
+@keyframes mascot-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.mascot-active {
+  animation: mascot-bob 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .charm,
+  .petal,
+  .mascot-active {
+    animation: none;
   }
 }
